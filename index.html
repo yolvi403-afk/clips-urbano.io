@@ -9,9 +9,17 @@
     * { box-sizing: border-box; }
     body { margin: 0; background: var(--negro); color: #e8ffe8; font-family: Arial, sans-serif; min-height: 100vh; }
 
+    #login { position: fixed; inset: 0; background: var(--negro); display: flex; align-items: center; justify-content: center; z-index: 999; padding: 16px; }
+    #formLogin { width: 100%; max-width: 340px; background: var(--gris); border: 1px solid var(--borde); border-radius: 14px; padding: 20px; display: grid; gap: 12px; }
+    #formLogin h2 { margin: 0; color: var(--verde); text-align: center; }
+    #formLogin input { padding: 12px; background: #000; color: #fff; border: 1px solid var(--borde); border-radius: 8px; font-size: 1rem; }
+    #formLogin button { padding: 12px; background: var(--verde); color: #000; font-weight: bold; border: none; border-radius: 30px; font-size: 1rem; cursor: pointer; }
+    #errLogin { margin: 0; color: #ff8a8a; text-align: center; font-size: .9rem; min-height: 1.2em; }
+
     header { display: flex; align-items: center; gap: 10px; padding: 18px 16px; border-bottom: 1px solid var(--borde); }
     .logo { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--verde), #0a7a35); display: grid; place-items: center; color: #000; font-weight: bold; }
-    header h1 { margin: 0; font-size: 1.3rem; letter-spacing: 2px; color: var(--verde); text-transform: uppercase; }
+    header h1 { margin: 0; font-size: 1.3rem; letter-spacing: 2px; color: var(--verde); text-transform: uppercase; flex: 1; }
+    .salir { background: none; color: #9fd9b0; border: 1px solid var(--borde); border-radius: 20px; padding: 6px 12px; font-size: .8rem; cursor: pointer; }
 
     main { max-width: 520px; margin: 0 auto; padding: 20px 16px 40px; }
 
@@ -24,6 +32,9 @@
     .ajustes .full { grid-column: 1 / -1; }
     .ajustes label { font-size: .8rem; color: #9fd9b0; display: grid; gap: 6px; }
     .ajustes input { width: 100%; padding: 10px; background: #000; color: #fff; border: 1px solid var(--borde); border-radius: 8px; font-size: 1rem; }
+
+    .acciones { margin-top: 14px; }
+    .acciones button { width: 100%; padding: 10px; background: var(--gris); color: var(--verde); border: 1px solid var(--verde); border-radius: 10px; font-size: .9rem; cursor: pointer; }
 
     #msg { text-align: center; color: #ff8a8a; min-height: 1.2em; margin: 14px 0 0; font-size: .95rem; }
 
@@ -42,9 +53,21 @@
   </style>
 </head>
 <body>
+
+  <div id="login">
+    <form id="formLogin">
+      <h2>Iniciar sesión</h2>
+      <input id="usuario" placeholder="Usuario" autocomplete="username" required>
+      <input id="clave" type="password" placeholder="Contraseña" autocomplete="current-password" required>
+      <button type="submit">Entrar</button>
+      <p id="errLogin"></p>
+    </form>
+  </div>
+
   <header>
     <div class="logo">▶</div>
     <h1>Clips Urbano</h1>
+    <button class="salir" id="salir">Salir</button>
   </header>
 
   <main>
@@ -65,18 +88,53 @@
       </label>
     </div>
 
+    <div class="acciones">
+      <button id="btnGuardar">Descargar data.json actualizado</button>
+    </div>
+
     <p id="msg"></p>
     <div class="lista" id="clips"></div>
   </main>
 
   <script>
+    const $ = id => document.getElementById(id);
+    const ARCHIVO_DATOS = 'data.json';
+
+    // ---------- Cuenta (la clave se compara en hash, no en texto) ----------
+    async function hashClave(texto) {
+      const datos = new TextEncoder().encode(texto);
+      const hash = await crypto.subtle.digest('SHA-256', datos);
+      return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // Hash de la clave 12345 y usuario yolvi
+    const USUARIO_OK = 'yolvi';
+    const HASH_OK = '5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5';
+
+    $('formLogin').addEventListener('submit', async e => {
+      e.preventDefault();
+      const hash = await hashClave($('clave').value);
+      if ($('usuario').value.trim() === USUARIO_OK && hash === HASH_OK) {
+        sessionStorage.setItem('cu_ok', '1');
+        $('login').style.display = 'none';
+      } else {
+        $('errLogin').textContent = 'Usuario o contraseña incorrectos.';
+        $('clave').value = '';
+      }
+    });
+
+    $('salir').onclick = () => {
+      sessionStorage.removeItem('cu_ok');
+      location.reload();
+    };
+
+    // ---------- Clips ----------
     function videoId(url) {
       try {
         let texto = url.trim();
         if (!/^https?:\/\//i.test(texto)) texto = 'https://' + texto;
         const u = new URL(texto);
         let id = null;
-
         if (u.hostname.includes('youtu.be')) {
           id = u.pathname.slice(1, 12);
         } else if (u.hostname.includes('youtube.com')) {
@@ -97,7 +155,6 @@
       return String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0');
     }
 
-    // Crea un título automático para cada clip según su posición
     function crearTitulo(i, total, tema) {
       const base = tema.trim() || 'Clip Urbano';
       let etiqueta;
@@ -107,13 +164,29 @@
       return base + ' · ' + etiqueta;
     }
 
-    function generar() {
-      const id = videoId(document.getElementById('url').value);
-      const total = parseFloat(document.getElementById('duracion').value) * 60;
-      const len = parseFloat(document.getElementById('clipSeg').value);
-      const tema = document.getElementById('tema').value;
-      const msg = document.getElementById('msg');
-      const lista = document.getElementById('clips');
+    function datosActuales() {
+      const clips = [...document.querySelectorAll('.card')].map((card, i) => ({
+        numero: i + 1,
+        titulo: card.querySelector('.tema').value,
+        tiempo: card.querySelector('.tiempo').textContent
+      }));
+      return {
+        usuario: USUARIO_OK,
+        url: $('url').value,
+        tema: $('tema').value,
+        duracion: parseFloat($('duracion').value) || 10,
+        clipSeg: parseFloat($('clipSeg').value) || 15,
+        clips
+      };
+    }
+
+    function generar(titulos) {
+      const id = videoId($('url').value);
+      const total = parseFloat($('duracion').value) * 60;
+      const len = parseFloat($('clipSeg').value);
+      const tema = $('tema').value;
+      const msg = $('msg');
+      const lista = $('clips');
 
       lista.innerHTML = '';
       if (!id) { msg.textContent = 'Link de YouTube no válido.'; return; }
@@ -121,7 +194,7 @@
       msg.textContent = '';
 
       const cantidad = 10;
-      const paso = (total - len) / (cantidad - 1); // 10 clips repartidos a lo largo del video
+      const paso = (total - len) / (cantidad - 1);
       for (let i = 0; i < cantidad; i++) {
         const ini = Math.round(i * paso);
         const fin = Math.round(ini + len);
@@ -134,37 +207,4 @@
         const num = document.createElement('span');
         num.className = 'num';
         num.textContent = String(i + 1).padStart(2, '0');
-        const titulo = document.createElement('input');
-        titulo.className = 'tema';
-        titulo.type = 'text';
-        titulo.value = crearTitulo(i, cantidad, tema);
-        cab.append(num, titulo);
-
-        const tiempo = document.createElement('div');
-        tiempo.className = 'tiempo';
-        tiempo.textContent = fmt(ini) + ' - ' + fmt(fin);
-
-        const player = document.createElement('div');
-        player.className = 'player';
-        const btn = document.createElement('button');
-        btn.className = 'play';
-        btn.textContent = '▶ Reproducir';
-        btn.onclick = () => {
-          const nombre = titulo.value.trim() || 'Clip ' + (i + 1);
-          player.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?start=${ini}&end=${fin}&autoplay=1"
-            title="${nombre.replace(/"/g, '')}" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-        };
-        player.appendChild(btn);
-
-        card.append(cab, tiempo, player);
-        lista.appendChild(card);
-      }
-    }
-
-    document.getElementById('gen').onclick = generar;
-    document.getElementById('url').addEventListener('keydown', e => {
-      if (e.key === 'Enter') generar();
-    });
-  </script>
-</body>
-</html>
+        const titulo = docu
