@@ -10,11 +10,13 @@
     body { margin: 0; background: var(--negro); color: #e8ffe8; font-family: Arial, sans-serif; min-height: 100vh; }
 
     #login { position: fixed; inset: 0; background: var(--negro); display: flex; align-items: center; justify-content: center; z-index: 999; padding: 16px; }
-    #formLogin { width: 100%; max-width: 340px; background: var(--gris); border: 1px solid var(--borde); border-radius: 14px; padding: 20px; display: grid; gap: 12px; }
-    #formLogin h2 { margin: 0; color: var(--verde); text-align: center; }
-    #formLogin input { padding: 12px; background: #000; color: #fff; border: 1px solid var(--borde); border-radius: 8px; font-size: 1rem; }
-    #formLogin button { padding: 12px; background: var(--verde); color: #000; font-weight: bold; border: none; border-radius: 30px; font-size: 1rem; cursor: pointer; }
-    #errLogin { margin: 0; color: #ff8a8a; text-align: center; font-size: .9rem; min-height: 1.2em; }
+    .tarjeta { width: 100%; max-width: 340px; background: var(--gris); border: 1px solid var(--borde); border-radius: 14px; padding: 20px; display: grid; gap: 12px; }
+    .tarjeta h2 { margin: 0; color: var(--verde); text-align: center; }
+    .tarjeta input { padding: 12px; background: #000; color: #fff; border: 1px solid var(--borde); border-radius: 8px; font-size: 1rem; }
+    .tarjeta button { padding: 12px; background: var(--verde); color: #000; font-weight: bold; border: none; border-radius: 30px; font-size: 1rem; cursor: pointer; }
+    .tarjeta .enlace { background: none; color: var(--verde); border: 1px solid var(--verde); padding: 10px; font-size: .9rem; }
+    .err { margin: 0; color: #ff8a8a; text-align: center; font-size: .9rem; min-height: 1.2em; }
+    #formRegistro { display: none; }
 
     header { display: flex; align-items: center; gap: 10px; padding: 18px 16px; border-bottom: 1px solid var(--borde); }
     .logo { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--verde), #0a7a35); display: grid; place-items: center; color: #000; font-weight: bold; }
@@ -36,7 +38,7 @@
     .acciones { margin-top: 14px; }
     .acciones button { width: 100%; padding: 10px; background: var(--gris); color: var(--verde); border: 1px solid var(--verde); border-radius: 10px; font-size: .9rem; cursor: pointer; }
 
-    #msg { text-align: center; color: #ff8a8a; min-height: 1.2em; margin: 14px 0 0; font-size: .95rem; }
+    #msg { text-align: center; color: #9fd9b0; min-height: 1.2em; margin: 14px 0 0; font-size: .95rem; }
 
     .lista { display: grid; gap: 14px; margin-top: 10px; }
     .card { background: var(--gris); border: 1px solid var(--borde); border-radius: 14px; padding: 14px; }
@@ -55,12 +57,23 @@
 <body>
 
   <div id="login">
-    <form id="formLogin">
+    <form id="formLogin" class="tarjeta">
       <h2>Iniciar sesión</h2>
       <input id="usuario" placeholder="Usuario" autocomplete="username" required>
       <input id="clave" type="password" placeholder="Contraseña" autocomplete="current-password" required>
       <button type="submit">Entrar</button>
-      <p id="errLogin"></p>
+      <p id="errLogin" class="err"></p>
+      <button type="button" class="enlace" id="irRegistro">Crear cuenta nueva</button>
+    </form>
+
+    <form id="formRegistro" class="tarjeta">
+      <h2>Crear cuenta</h2>
+      <input id="nuevoUsuario" placeholder="Nuevo usuario (mínimo 3)" autocomplete="off" required>
+      <input id="nuevaClave" type="password" placeholder="Contraseña (mínimo 4)" autocomplete="new-password" required>
+      <input id="nuevaClave2" type="password" placeholder="Repite la contraseña" autocomplete="new-password" required>
+      <button type="submit">Registrarse</button>
+      <p id="errRegistro" class="err"></p>
+      <button type="button" class="enlace" id="irLogin">Volver a iniciar sesión</button>
     </form>
   </div>
 
@@ -99,20 +112,51 @@
   <script>
     const $ = id => document.getElementById(id);
     const ARCHIVO_DATOS = 'data.json';
-    const USUARIO_OK = 'yolvi';
-    const CLAVE_INICIAL = 'MiClaveSegura-2026'; // Cambia esta clave por la tuya
+    const USUARIO_ADMIN = 'yolvi';
+    const CLAVE_ADMIN = 'MiClaveSegura-2026'; // Cambia esta clave por la tuya
+
+    // Cuentas leídas de data.json (del repositorio)
+    let usuariosRepo = [];
+    // Cuentas creadas en este navegador
+    let usuariosLocales = JSON.parse(localStorage.getItem('cu_usuarios') || '[]');
+
+    async function hashClave(texto) {
+      const datos = new TextEncoder().encode(texto);
+      const hash = await crypto.subtle.digest('SHA-256', datos);
+      return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function todosLosUsuarios() {
+      const mapa = new Map();
+      [...usuariosRepo, ...usuariosLocales].forEach(u => mapa.set(u.usuario.toLowerCase(), u));
+      return [...mapa.values()];
+    }
 
     function ocultarLogin() {
       $('login').style.setProperty('display', 'none', 'important');
     }
 
-    // ---------- Inicio de sesión (único usuario permitido) ----------
-    $('formLogin').addEventListener('submit', e => {
+    function mostrarForm(cual) {
+      $('formLogin').style.display = cual === 'login' ? 'grid' : 'none';
+      $('formRegistro').style.display = cual === 'registro' ? 'grid' : 'none';
+    }
+    $('irRegistro').onclick = () => { mostrarForm('registro'); $('errLogin').textContent = ''; };
+    $('irLogin').onclick = () => { mostrarForm('login'); $('errRegistro').textContent = ''; };
+
+    // ---------- Iniciar sesión ----------
+    $('formLogin').addEventListener('submit', async e => {
       e.preventDefault();
       const usuario = $('usuario').value.trim().toLowerCase();
       const clave = $('clave').value;
-      if (usuario === USUARIO_OK && clave === CLAVE_INICIAL) {
+      const hash = await hashClave(clave);
+
+      const esAdmin = usuario === USUARIO_ADMIN && clave === CLAVE_ADMIN;
+      const cuenta = todosLosUsuarios().find(u => u.usuario.toLowerCase() === usuario);
+      const valida = esAdmin || (cuenta && cuenta.hash === hash);
+
+      if (valida) {
         sessionStorage.setItem('cu_ok', '1');
+        sessionStorage.setItem('cu_usuario', usuario);
         $('errLogin').textContent = '';
         ocultarLogin();
       } else {
@@ -121,8 +165,37 @@
       }
     });
 
+    // ---------- Registro ----------
+    $('formRegistro').addEventListener('submit', async e => {
+      e.preventDefault();
+      const usuario = $('nuevoUsuario').value.trim();
+      const clave = $('nuevaClave').value;
+      const clave2 = $('nuevaClave2').value;
+      const existe = todosLosUsuarios().some(u => u.usuario.toLowerCase() === usuario.toLowerCase());
+
+      if (usuario.length < 3) {
+        $('errRegistro').textContent = 'El usuario debe tener al menos 3 caracteres.';
+      } else if (clave.length < 4) {
+        $('errRegistro').textContent = 'La contraseña debe tener al menos 4 caracteres.';
+      } else if (clave !== clave2) {
+        $('errRegistro').textContent = 'Las contraseñas no coinciden.';
+      } else if (existe || usuario.toLowerCase() === USUARIO_ADMIN) {
+        $('errRegistro').textContent = 'Ese usuario ya existe.';
+      } else {
+        const hash = await hashClave(clave);
+        usuariosLocales.push({ usuario, hash, creado: new Date().toISOString() });
+        localStorage.setItem('cu_usuarios', JSON.stringify(usuariosLocales));
+        sessionStorage.setItem('cu_ok', '1');
+        sessionStorage.setItem('cu_usuario', usuario);
+        $('errRegistro').textContent = '';
+        ocultarLogin();
+        $('msg').textContent = 'Cuenta creada. Descarga data.json y súbelo al repositorio para guardarla.';
+      }
+    });
+
     $('salir').onclick = () => {
       sessionStorage.removeItem('cu_ok');
+      sessionStorage.removeItem('cu_usuario');
       location.reload();
     };
 
@@ -169,7 +242,7 @@
         tiempo: card.querySelector('.tiempo').textContent
       }));
       return {
-        usuario: USUARIO_OK,
+        usuarios: todosLosUsuarios(),
         url: $('url').value,
         tema: $('tema').value,
         duracion: parseFloat($('duracion').value) || 10,
@@ -238,6 +311,7 @@
         const r = await fetch(ARCHIVO_DATOS + '?v=' + Date.now(), { cache: 'no-store' });
         if (!r.ok) throw new Error('no encontrado');
         const d = await r.json();
+        usuariosRepo = Array.isArray(d.usuarios) ? d.usuarios : [];
         $('url').value = d.url || '';
         $('tema').value = d.tema || '';
         $('duracion').value = d.duracion || 10;
@@ -261,7 +335,7 @@
       $('msg').textContent = 'Descargado. Súbelo al repositorio para reemplazar el anterior.';
     };
 
-    // ---------- Eventos e inicio ----------
+    // ---------- Inicio ----------
     $('gen').onclick = () => generar(null);
     $('url').addEventListener('keydown', e => { if (e.key === 'Enter') generar(null); });
 
