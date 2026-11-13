@@ -1,169 +1,242 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clips Urbano</title>
-  <style>
-    :root { --verde: #22e06b; --verde-claro: #7dff9f; --negro: #050505; --gris: #111; --gris2: #1a1a1a; --borde: #1f3d2a; }
-    * { box-sizing: border-box; }
-    body { margin: 0; background: var(--negro); color: #e8ffe8; font-family: Arial, sans-serif; min-height: 100vh; }
-
-    header { display: flex; align-items: center; gap: 10px; padding: 18px 16px; border-bottom: 1px solid var(--borde); }
-    .logo { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--verde), #0a7a35); display: grid; place-items: center; color: #000; font-weight: bold; }
-    header h1 { margin: 0; font-size: 1.3rem; letter-spacing: 2px; color: var(--verde); text-transform: uppercase; }
-
-    main { max-width: 520px; margin: 0 auto; padding: 20px 16px 40px; }
-
-    .buscar { display: flex; align-items: center; background: #000; border: 2px solid var(--verde); border-radius: 40px; padding: 4px 4px 4px 16px; box-shadow: 0 0 14px rgba(34,224,107,.25); }
-    .buscar input { flex: 1; min-width: 0; background: transparent; border: none; outline: none; color: #fff; font-size: 1rem; padding: 10px 0; }
-    .buscar input::placeholder { color: #777; }
-    .buscar button { width: 48px; height: 48px; flex-shrink: 0; border: none; border-radius: 50%; background: linear-gradient(90deg, var(--verde), var(--verde-claro)); color: #000; font-size: 1.4rem; font-weight: bold; cursor: pointer; }
-
-    .ajustes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; background: var(--gris2); border: 1px solid var(--borde); border-radius: 14px; padding: 14px; }
-    .ajustes .full { grid-column: 1 / -1; }
-    .ajustes label { font-size: .8rem; color: #9fd9b0; display: grid; gap: 6px; }
-    .ajustes input { width: 100%; padding: 10px; background: #000; color: #fff; border: 1px solid var(--borde); border-radius: 8px; font-size: 1rem; }
-
-    #msg { text-align: center; color: #ff8a8a; min-height: 1.2em; margin: 14px 0 0; font-size: .95rem; }
-
-    .lista { display: grid; gap: 14px; margin-top: 10px; }
-    .card { background: var(--gris); border: 1px solid var(--borde); border-radius: 14px; padding: 14px; }
-    .cab { display: flex; align-items: center; gap: 10px; }
-    .num { flex-shrink: 0; background: var(--verde); color: #000; font-weight: bold; font-size: .85rem; border-radius: 8px; padding: 6px 9px; }
-    .tema { flex: 1; min-width: 0; background: #000; color: #fff; border: 1px solid var(--borde); border-radius: 8px; padding: 9px 10px; font-size: .95rem; }
-    .tema:focus { outline: none; border-color: var(--verde); }
-    .tiempo { font-size: .8rem; color: var(--verde-claro); margin: 8px 0; }
-
-    .player { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid var(--borde); }
-    .player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
-    .play { background: var(--verde); color: #000; border: none; border-radius: 30px; padding: 10px 20px; font-weight: bold; font-size: 1rem; cursor: pointer; }
-    .play:hover { opacity: .85; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clips Urbano</title>
+<style>
+:root {
+  --verde:#22e06b;
+  --claro:#7dff9f;
+  --negro:#050505;
+  --gris:#111;
+  --borde:#1f3d2a;
+}
+* {box-sizing:border-box}
+body {
+  margin:0;background:var(--negro);
+  color:#e8ffe8;font-family:Arial,sans-serif;
+}
+header {
+  display:flex;align-items:center;gap:10px;
+  padding:18px;border-bottom:1px solid var(--borde);
+}
+.logo {
+  width:36px;height:36px;border-radius:50%;
+  background:var(--verde);color:#000;
+  display:grid;place-items:center;font-weight:bold;
+}
+h1 {font-size:21px;color:var(--verde);letter-spacing:2px}
+main {max-width:520px;margin:auto;padding:20px 16px}
+.buscar {
+  display:flex;gap:5px;padding:5px 5px 5px 15px;
+  border:2px solid var(--verde);border-radius:40px;
+}
+input {
+  min-width:0;background:#000;color:white;
+  border:1px solid var(--borde);padding:11px;
+  border-radius:8px;
+}
+.buscar input {flex:1;border:0;outline:0}
+button {
+  border:0;border-radius:25px;padding:12px;
+  background:var(--verde);color:#000;
+  font-weight:bold;cursor:pointer;
+}
+.ajustes {
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:10px;margin-top:15px;padding:14px;
+  background:#1a1a1a;border:1px solid var(--borde);
+  border-radius:14px;
+}
+label {display:grid;gap:7px;font-size:13px;color:var(--claro)}
+.full {grid-column:1/-1}
+#msg {text-align:center;color:#ff8888}
+.lista {display:grid;gap:14px}
+.card {
+  padding:14px;background:var(--gris);
+  border:1px solid var(--borde);border-radius:14px;
+}
+.cab {display:flex;gap:10px;align-items:center}
+.num {background:var(--verde);color:#000;padding:8px;border-radius:8px}
+.tema {flex:1}
+.tiempo {color:var(--claro);font-size:13px;margin:10px 0}
+.player {
+  width:100%;aspect-ratio:16/9;
+  background:#000;border-radius:10px;overflow:hidden;
+}
+iframe {width:100%;height:100%;border:0}
+.acciones {display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.descarga {background:#174b2b;color:white}
+.subtitulos {margin-top:12px;font-size:13px}
+.subtitulos input {width:100%;margin-top:7px}
+.nota {font-size:12px;color:#aaa;line-height:1.5}
+</style>
 </head>
 <body>
 
-  <header>
-    <div class="logo">▶</div>
-    <h1>Clips Urbano</h1>
-  </header>
+<header>
+  <div class="logo">▶</div>
+  <h1>CLIPS URBANO</h1>
+</header>
 
-  <main>
-    <div class="buscar">
-      <input id="url" type="text" placeholder="Pega un enlace de YouTube">
-      <button id="gen" aria-label="Generar clips">→</button>
-    </div>
+<main>
+  <div class="buscar">
+    <input id="url" placeholder="Pega un enlace de YouTube">
+    <button id="gen">➜</button>
+  </div>
 
-    <div class="ajustes">
-      <label class="full">Tema general (opcional)
-        <input id="tema" type="text" placeholder="Ej: Barrio, Rap, Entrevista">
-      </label>
-      <label>Duración del video (min)
-        <input id="duracion" type="number" min="1" value="10">
-      </label>
-      <label>Duración por clip (seg)
-        <input id="clipSeg" type="number" min="5" value="15">
-      </label>
-    </div>
+  <div class="ajustes">
+    <label class="full">Tema general
+      <input id="tema" placeholder="Ej: Barrio, Rap, Entrevista">
+    </label>
+    <label>Duración (min)
+      <input id="duracion" type="number" min="1" value="10">
+    </label>
+    <label>Clip (segundos)
+      <input id="clipSeg" type="number" min="5" value="15">
+    </label>
+  </div>
 
-    <p id="msg"></p>
-    <div class="lista" id="clips"></div>
-  </main>
+  <p id="msg"></p>
+  <div id="clips" class="lista"></div>
+</main>
 
-  <script>
-    const $ = id => document.getElementById(id);
+<script>
+const $ = id => document.getElementById(id);
 
-    function videoId(url) {
-      try {
-        let texto = url.trim();
-        if (!/^https?:\/\//i.test(texto)) texto = 'https://' + texto;
-        const u = new URL(texto);
-        let id = null;
-        if (u.hostname.includes('youtu.be')) {
-          id = u.pathname.slice(1, 12);
-        } else if (u.hostname.includes('youtube.com')) {
-          id = u.searchParams.get('v');
-          if (!id) {
-            const m = u.pathname.match(/\/(?:shorts|embed|live|v)\/([A-Za-z0-9_-]{11})/);
-            id = m ? m[1] : null;
-          }
-        }
-        return id && /^[A-Za-z0-9_-]{11}$/.test(id.slice(0, 11)) ? id.slice(0, 11) : null;
-      } catch (e) {
-        return null;
-      }
+function videoId(url) {
+  try {
+    const u = new URL(
+      /^https?:\/\//i.test(url) ? url : 'https://' + url
+    );
+    let id = u.hostname.includes('youtu.be')
+      ? u.pathname.slice(1,12)
+      : u.searchParams.get('v');
+
+    if (!id) {
+      const m = u.pathname.match(
+        /\/(?:shorts|embed|live)\/([A-Za-z0-9_-]{11})/
+      );
+      id = m ? m[1] : null;
     }
+    return /^[A-Za-z0-9_-]{11}$/.test(id || '') ? id : null;
+  } catch { return null; }
+}
 
-    function fmt(s) {
-      const m = Math.floor(s / 60), r = Math.floor(s % 60);
-      return String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0');
-    }
+function fmt(s) {
+  return String(Math.floor(s/60)).padStart(2,'0') +
+    ':' + String(s%60).padStart(2,'0');
+}
 
-    function crearTitulo(i, total, tema) {
-      const base = tema.trim() || 'Clip Urbano';
-      let etiqueta;
-      if (i === 0) etiqueta = 'Inicio';
-      else if (i === total - 1) etiqueta = 'Final';
-      else etiqueta = 'Momento ' + (i + 1);
-      return base + ' · ' + etiqueta;
-    }
+function generar() {
+  const id = videoId($('url').value.trim());
+  const total = Number($('duracion').value)*60;
+  const len = Number($('clipSeg').value);
+  const tema = $('tema').value.trim();
+  const lista = $('clips');
 
-    function generar() {
-      const id = videoId($('url').value);
-      const total = parseFloat($('duracion').value) * 60;
-      const len = parseFloat($('clipSeg').value);
-      const tema = $('tema').value;
-      const msg = $('msg');
-      const lista = $('clips');
+  lista.replaceChildren();
 
-      lista.innerHTML = '';
-      if (!id) { msg.textContent = 'Link de YouTube no válido.'; return; }
-      if (!total || !len || len >= total) { msg.textContent = 'Revisa las duraciones.'; return; }
-      msg.textContent = '';
+  if (!id) {
+    $('msg').textContent='Enlace de YouTube no válido.';
+    return;
+  }
+  if (!total || !len || len >= total) {
+    $('msg').textContent='Revisa las duraciones.';
+    return;
+  }
 
-      const cantidad = 10;
-      const paso = (total - len) / (cantidad - 1);
-      for (let i = 0; i < cantidad; i++) {
-        const ini = Math.round(i * paso);
-        const fin = Math.round(ini + len);
+  $('msg').textContent='Fragmentos preparados.';
 
-        const card = document.createElement('div');
-        card.className = 'card';
+  const cantidad=10;
+  const paso=(total-len)/(cantidad-1);
 
-        const cab = document.createElement('div');
-        cab.className = 'cab';
-        const num = document.createElement('span');
-        num.className = 'num';
-        num.textContent = String(i + 1).padStart(2, '0');
-        const titulo = document.createElement('input');
-        titulo.className = 'tema';
-        titulo.type = 'text';
-        titulo.value = crearTitulo(i, cantidad, tema);
-        cab.append(num, titulo);
+  for(let i=0;i<cantidad;i++) {
+    const ini=Math.round(i*paso);
+    const fin=ini+len;
 
-        const tiempo = document.createElement('div');
-        tiempo.className = 'tiempo';
-        tiempo.textContent = fmt(ini) + ' - ' + fmt(fin);
+    const card=document.createElement('section');
+    card.className='card';
 
-        const player = document.createElement('div');
-        player.className = 'player';
-        const btn = document.createElement('button');
-        btn.className = 'play';
-        btn.textContent = '▶ Reproducir';
-        btn.onclick = () => {
-          const nombre = titulo.value.trim() || 'Clip ' + (i + 1);
-          player.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?start=${ini}&end=${fin}&autoplay=1"
-            title="${nombre.replace(/"/g, '')}" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-        };
-        player.appendChild(btn);
+    const cab=document.createElement('div');
+    cab.className='cab';
 
-        card.append(cab, tiempo, player);
-        lista.appendChild(card);
-      }
-    }
+    const num=document.createElement('span');
+    num.className='num';
+    num.textContent=String(i+1).padStart(2,'0');
 
-    $('gen').onclick = generar;
-    $('url').addEventListener('keydown', e => { if (e.key === 'Enter') generar(); });
-  </script>
+    const titulo=document.createElement('input');
+    titulo.className='tema';
+    titulo.value=(tema || 'Clip Urbano')+' · Clip '+(i+1);
+
+    cab.append(num,titulo);
+
+    const tiempo=document.createElement('div');
+    tiempo.className='tiempo';
+    tiempo.textContent=fmt(ini)+' - '+fmt(fin);
+
+    const player=document.createElement('div');
+    player.className='player';
+
+    const iframe=document.createElement('iframe');
+    iframe.src=`https://www.youtube.com/embed/${id}?start=${ini}&end=${fin}`;
+    iframe.allow='autoplay; encrypted-media';
+    iframe.allowFullscreen=true;
+    player.append(iframe);
+
+    const subtitulos=document.createElement('div');
+    subtitulos.className='subtitulos';
+
+    const label=document.createElement('label');
+    label.textContent='Subtítulos (.SRT o .VTT)';
+
+    const archivo=document.createElement('input');
+    archivo.type='file';
+    archivo.accept='.srt,.vtt';
+
+    archivo.onchange=()=>{
+      const file=archivo.files[0];
+      if(!file) return;
+
+      const urlArchivo=URL.createObjectURL(file);
+      iframe.src += '&cc_load_policy=1';
+      const mensaje=document.createElement('p');
+      mensaje.className='nota';
+      mensaje.textContent='Subtítulo cargado localmente. Para integrarlo al MP4 se necesita procesar el video.';
+      subtitulos.append(mensaje);
+    };
+
+    label.append(archivo);
+    subtitulos.append(label);
+
+    const acciones=document.createElement('div');
+    acciones.className='acciones';
+
+    const reproducir=document.createElement('button');
+    reproducir.textContent='▶ Reproducir';
+    reproducir.onclick=()=>{
+      iframe.src=`https://www.youtube.com/embed/${id}?start=${ini}&end=${fin}&autoplay=1`;
+    };
+
+    const descargar=document.createElement('button');
+    descargar.className='descarga';
+    descargar.textContent='⬇ Descargar MP4';
+    descargar.onclick=()=>{
+      $('msg').textContent=
+        'La descarga MP4 requiere conectar el servicio de procesamiento de video.';
+    };
+
+    acciones.append(reproducir,descargar);
+    card.append(cab,tiempo,player,subtitulos,acciones);
+    lista.append(card);
+  }
+}
+
+$('gen').onclick=generar;
+$('url').addEventListener('keydown',e=>{
+  if(e.key==='Enter') generar();
+});
+</script>
 </body>
 </html>
