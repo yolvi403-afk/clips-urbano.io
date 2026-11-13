@@ -99,24 +99,22 @@
   <script>
     const $ = id => document.getElementById(id);
     const ARCHIVO_DATOS = 'data.json';
+    const USUARIO_OK = 'yolvi';
+    const CLAVE_INICIAL = 'MiClaveSegura-2026'; // Cambia esta clave por la tuya
 
-    // ---------- Cuenta (la clave se compara en hash, no en texto) ----------
-    async function hashClave(texto) {
-      const datos = new TextEncoder().encode(texto);
-      const hash = await crypto.subtle.digest('SHA-256', datos);
-      return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, '0')).join('');
+    function ocultarLogin() {
+      $('login').style.setProperty('display', 'none', 'important');
     }
 
-    // Hash de la clave 12345 y usuario yolvi
-    const USUARIO_OK = 'yolvi';
-    const HASH_OK = '5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5';
-
-    $('formLogin').addEventListener('submit', async e => {
+    // ---------- Inicio de sesión (único usuario permitido) ----------
+    $('formLogin').addEventListener('submit', e => {
       e.preventDefault();
-      const hash = await hashClave($('clave').value);
-      if ($('usuario').value.trim() === USUARIO_OK && hash === HASH_OK) {
+      const usuario = $('usuario').value.trim().toLowerCase();
+      const clave = $('clave').value;
+      if (usuario === USUARIO_OK && clave === CLAVE_INICIAL) {
         sessionStorage.setItem('cu_ok', '1');
-        $('login').style.display = 'none';
+        $('errLogin').textContent = '';
+        ocultarLogin();
       } else {
         $('errLogin').textContent = 'Usuario o contraseña incorrectos.';
         $('clave').value = '';
@@ -207,4 +205,68 @@
         const num = document.createElement('span');
         num.className = 'num';
         num.textContent = String(i + 1).padStart(2, '0');
-        const titulo = docu
+        const titulo = document.createElement('input');
+        titulo.className = 'tema';
+        titulo.type = 'text';
+        titulo.value = (titulos && titulos[i]) || crearTitulo(i, cantidad, tema);
+        cab.append(num, titulo);
+
+        const tiempo = document.createElement('div');
+        tiempo.className = 'tiempo';
+        tiempo.textContent = fmt(ini) + ' - ' + fmt(fin);
+
+        const player = document.createElement('div');
+        player.className = 'player';
+        const btn = document.createElement('button');
+        btn.className = 'play';
+        btn.textContent = '▶ Reproducir';
+        btn.onclick = () => {
+          const nombre = titulo.value.trim() || 'Clip ' + (i + 1);
+          player.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?start=${ini}&end=${fin}&autoplay=1"
+            title="${nombre.replace(/"/g, '')}" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+        };
+        player.appendChild(btn);
+
+        card.append(cab, tiempo, player);
+        lista.appendChild(card);
+      }
+    }
+
+    // ---------- Leer data.json del repositorio ----------
+    async function cargarDataJson() {
+      try {
+        const r = await fetch(ARCHIVO_DATOS + '?v=' + Date.now(), { cache: 'no-store' });
+        if (!r.ok) throw new Error('no encontrado');
+        const d = await r.json();
+        $('url').value = d.url || '';
+        $('tema').value = d.tema || '';
+        $('duracion').value = d.duracion || 10;
+        $('clipSeg').value = d.clipSeg || 15;
+        const titulos = (d.clips || []).map(c => c.titulo);
+        generar(titulos.length ? titulos : null);
+        $('msg').textContent = 'Datos cargados desde data.json.';
+      } catch (e) {
+        $('msg').textContent = 'No se pudo leer data.json. Revisa que esté en el repositorio.';
+      }
+    }
+
+    // ---------- Descargar data.json actualizado ----------
+    $('btnGuardar').onclick = () => {
+      const blob = new Blob([JSON.stringify(datosActuales(), null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'data.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      $('msg').textContent = 'Descargado. Súbelo al repositorio para reemplazar el anterior.';
+    };
+
+    // ---------- Eventos e inicio ----------
+    $('gen').onclick = () => generar(null);
+    $('url').addEventListener('keydown', e => { if (e.key === 'Enter') generar(null); });
+
+    if (sessionStorage.getItem('cu_ok') === '1') ocultarLogin();
+    cargarDataJson();
+  </script>
+</body>
+</html>
